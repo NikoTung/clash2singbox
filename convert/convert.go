@@ -23,6 +23,7 @@ var convertMap = map[string]func(*clash.Proxies, *singbox.SingBoxOut) ([]singbox
 	"tuic":      tuic,
 }
 
+
 func oldConver(f func(*clash.Proxies, *singbox.SingBoxOut) error) func(*clash.Proxies, *singbox.SingBoxOut) ([]singbox.SingBoxOut, error) {
 	return func(c *clash.Proxies, p *singbox.SingBoxOut) ([]singbox.SingBoxOut, error) {
 		err := f(c, p)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/xmdhs/clash2singbox/model/clash"
 	"github.com/xmdhs/clash2singbox/model/singbox"
@@ -37,6 +38,42 @@ func getForList[K, V any](l []K, check func(K) (V, bool)) []V {
 		sl = append(sl, s)
 	}
 	return sl
+}
+
+func filterOut(s []string, flag string) []string {
+
+	return getForList(s, func(v string) (string, bool) {
+		f, has := flags[flag]
+		if has {
+			for _, keyword := range f {
+				c := strings.Contains(v, keyword)
+				if c {
+					return v, true
+				}
+			}
+			return v, false
+		}
+		return v, false
+	})
+}
+
+func filterExlude(s []string, flag []string) []string {
+
+	return getForList(s, func(v string) (string, bool) {
+		for _, c := range flag {
+			f, has := flags[c]
+			if has {
+				for _, keyword := range f {
+					c := strings.Contains(v, keyword)
+					if c {
+						return "", false
+					}
+				}
+			}
+		}
+
+		return v, true
+	})
 }
 
 // func getServers(s []singbox.SingBoxOut) []string {
@@ -116,40 +153,85 @@ func PatchMap(
 		}
 	}
 
-	if urltestOut {
-		s = append([]singbox.SingBoxOut{{
-			Type:      "selector",
-			Tag:       "select",
-			Outbounds: append([]string{"urltest"}, tags...),
-			Default:   "urltest",
-		}}, s...)
-		s = append(s, singbox.SingBoxOut{
-			Type:      "urltest",
-			Tag:       "urltest",
-			Outbounds: ftags,
-		})
+	group := []singbox.SingBoxOut{}
+
+	//auto
+	group = append(group, singbox.SingBoxOut{
+		Type:      "urltest",
+		Tag:       "auto",
+		Interval:  "10m",
+		Tolerance: 100,
+		Outbounds: append([]string{}, tags...),
+	})
+	//proxy
+	group = append(group, singbox.SingBoxOut{
+		Type:      "selector",
+		Tag:       "proxy",
+		Outbounds: append([]string{"auto", "direct"}, tags...),
+	})
+
+	hk := filterOut(tags, "🇭🇰")
+	us := filterOut(tags, "🇺🇸")
+	sg := filterOut(tags, "🇸🇬")
+	jp := filterOut(tags, "🇯🇵")
+	tw := filterOut(tags, "tw")
+	others := filterExlude(tags, []string{"🇭🇰", "🇺🇸", "🇸🇬", "🇯🇵", "tw"})
+
+	group = append(group, singbox.SingBoxOut{
+		Type:      "selector",
+		Tag:       "🇭🇰 HongKong",
+		Outbounds: hk,
+	})
+
+	group = append(group, singbox.SingBoxOut{
+		Type:      "selector",
+		Tag:       "🇺🇸 USA",
+		Outbounds: us,
+	})
+
+	group = append(group, singbox.SingBoxOut{
+		Type:      "selector",
+		Tag:       "🇸🇬 Singapore",
+		Outbounds: sg,
+	})
+
+	group = append(group, singbox.SingBoxOut{
+		Type:      "selector",
+		Tag:       "🇯🇵 Japan",
+		Outbounds: jp,
+	})
+
+	group = append(group, singbox.SingBoxOut{
+		Type:      "selector",
+		Tag:       "🇹🇼 Taiwan",
+		Outbounds: tw,
+	})
+
+	group = append(group, singbox.SingBoxOut{
+		Type:      "selector",
+		Tag:       "✈️ Others",
+		Outbounds: others,
+	})
+
+	x := d["outbounds"]
+
+	finalList := []any{}
+	for _, v := range group {
+		finalList = append(finalList, v)
 	}
 
-	s = append(s, singbox.SingBoxOut{
-		Type: "direct",
-		Tag:  "direct",
-	})
-	s = append(s, singbox.SingBoxOut{
-		Type: "block",
-		Tag:  "block",
-	})
-	s = append(s, singbox.SingBoxOut{
-		Type: "dns",
-		Tag:  "dns-out",
-	})
+	if xList, ok := x.([]any); ok {
+		finalList = append(finalList, xList...)
+	} else {
+		// Handle the case when x is not of type []any
+		// You can choose to skip or handle the error accordingly
+	}
 
-	anyList := make([]any, 0, len(s)+len(extOut))
 	for _, v := range s {
-		anyList = append(anyList, v)
+		finalList = append(finalList, v)
 	}
-	anyList = append(anyList, extOut...)
 
-	d["outbounds"] = anyList
+	d["outbounds"] = finalList
 
 	return d, nil
 }
