@@ -1,16 +1,15 @@
 name: Build And Publish Releases
 
-# https://github.com/softprops/action-gh-release/issues/236#issuecomment-1150530128
-permissions:
-  contents: write
-
 on:
-  # Allow mannual trigger
   workflow_dispatch:
-  # Trigger on push new tag
+  schedule:
+    - cron: "0 0 * * *"
   push:
-    tags:
-      - "v*.*.*"
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   build-and-publish:
@@ -21,5 +20,19 @@ jobs:
       - uses: actions/setup-go@v4
       - name: Build
         run: go build -o app
+      - name: Download template with wget
+        env: 
+          TEMPLATE_URL: ${{ secrets.TEMPLATE_URL }}
+        run: wget -O template.json "$TEMPLATE_URL"
       - name: Generation
-        run: ./app -url ${{ secrets.R2_ACCESS_SECRET_KEY }} 
+        env: 
+          SUB_URLS: ${{ secrets.SUB_URLS }}
+        run: ./app -url "$SUB_URLS" -t template.json -o ./config/config.json
+      - uses: ryand56/r2-upload-action@latest
+        with:
+          r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          r2-bucket: ${{ secrets.R2_BUCKET }}
+          source-dir: config
+          output-file-url: 'false'
