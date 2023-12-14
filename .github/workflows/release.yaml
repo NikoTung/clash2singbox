@@ -29,7 +29,7 @@ jobs:
       - name: Generation
         env: 
           SUB_URLS: ${{ secrets.SUB_URLS }}
-        run: ./app -url "$SUB_URLS" -t template.json -o ./config/config.json
+        run: mkdir config && ./app -url "$SUB_URLS" -t template.json -o config/config.json
       - uses: ryand56/r2-upload-action@latest
         with:
           r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
