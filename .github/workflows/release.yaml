@@ -25,7 +25,7 @@ jobs:
       - name: Download template with wget
         env: 
           TEMPLATE_URL: ${{ secrets.TEMPLATE_URL }}
-        run: wget -O template.json "$TEMPLATE_URL"
+        run: wget -q -O template.json "$TEMPLATE_URL"
       - name: Generation
         env: 
           SUB_URLS: ${{ secrets.SUB_URLS }}
