@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 func HttpGet(cxt context.Context, c *http.Client, url string, maxByte int64) ([]byte, error) {
@@ -37,5 +38,6 @@ type Errpget struct {
 }
 
 func (h Errpget) Error() string {
-	return "not 200: " + h.Msg + " " + h.url
+	u, _ := url.Parse(h.url)
+	return "not 200: " + h.Msg + " " + u.Host
 }
