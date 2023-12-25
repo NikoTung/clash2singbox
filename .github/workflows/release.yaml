@@ -25,6 +25,7 @@ jobs:
       - name: Download template with wget
         env: 
           TEMPLATE_URL: ${{ secrets.TEMPLATE_URL }}
+          TEMPLATE_URL_1_7: ${{ secrets.TEMPLATE_URL_1_7 }}
         run: |
           wget -q -O template.json "$TEMPLATE_URL"
           wget -q -O template-1.7.json "$TEMPLATE_URL_1_7"
