@@ -25,11 +25,16 @@ jobs:
       - name: Download template with wget
         env: 
           TEMPLATE_URL: ${{ secrets.TEMPLATE_URL }}
-        run: wget -q -O template.json "$TEMPLATE_URL"
+        run: |
+          wget -q -O template.json "$TEMPLATE_URL"
+          wget -q -O template-1.7.json "$TEMPLATE_URL_1_7"
       - name: Generation
         env: 
           SUB_URLS: ${{ secrets.SUB_URLS }}
-        run: mkdir config && ./app -url "$SUB_URLS" -t template.json -o config/config.json
+        run: |
+          mkdir config 
+          ./app -url "$SUB_URLS" -t template.json -o config/config.json
+          ./app -url "$SUB_URLS" -t template-1.7.json -o config/config-1.7.json
       - uses: ryand56/r2-upload-action@latest
         with:
           r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
